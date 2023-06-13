@@ -1,4 +1,5 @@
 from odmantic import Model
+from typing import Optional
 
 
 class ComplexModel(Model):
@@ -10,12 +11,12 @@ class ComplexModel(Model):
     approve_date: str
     deal_count: int
     lease_count: int
-    min_space: int
-    max_space: int
-    min_deal_price: int
-    max_deal_price: int
-    min_lease_price: int
-    max_lease_price: int
+    min_space: float
+    max_space: float
+    min_deal_price: Optional[int]
+    max_deal_price: Optional[int]
+    min_lease_price: Optional[int]
+    max_lease_price: Optional[int]
 
     class Config:
         collection = "complex"
@@ -37,4 +38,4 @@ class AptModel(Model):
     max_lease_price: int
 
     class Config:
-        collection = "complex"
+        collection = "apt"
