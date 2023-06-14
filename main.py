@@ -66,7 +66,7 @@ def search_result(request: Request):
             max_lease_price=regex(item, "leasePrcMax"),
         )
         complex_models.append(complex_model)
-    naver_apt_scraper.get_available_apt(608)
+    print(naver_apt_scraper.get_available_apt(608))
     # await mongodb.engine.save_all(complex_models)  # 각 모델 인스턴스를 DB에 저장한다.
     # context = {"request": request, "keyword": keyword, "complex": complex_models}
     # return templates.TemplateResponse("index.html", context=context)
