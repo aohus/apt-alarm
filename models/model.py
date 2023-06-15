@@ -1,41 +1,46 @@
-from odmantic import Model
-from typing import Optional
+from odmantic import Model, EmbeddedModel
+from typing import Optional, List
 
 
 class ComplexModel(Model):
-    item_id: int
-    type: str
-    apt_name: str
+    complex_id: int
+    complex_name: str
     total_dong_count: int
     total_apt_count: int
-    approve_date: str
+    approved_date: str
     deal_count: int
     lease_count: int
     min_space: float
     max_space: float
-    min_deal_price: Optional[int]
-    max_deal_price: Optional[int]
-    min_lease_price: Optional[int]
-    max_lease_price: Optional[int]
+    min_deal_price: Optional[float]
+    max_deal_price: Optional[float]
+    min_lease_price: Optional[float]
+    max_lease_price: Optional[float]
+
+    # class Config:
+    #     collection = "complex"
+
+
+class Conditions(EmbeddedModel):
+    min_size: float
+    min_floors: int
+    max_floors: int
+    price: int
+
+
+class InterestModel(Model):
+    user_id: str
+    complex_id: int
+    complex_name: str
+    conditions: Optional[Conditions]
 
     class Config:
-        collection = "complex"
+        collection = "interest"
 
 
-class AptModel(Model):
-    item_id: int
-    apt_name: str
-    total_dong_count: int
-    total_apt_count: int
-    approve_date: str
-    deal_count: int
-    lease_count: int
-    min_space: int
-    max_space: int
-    min_deal_price: int
-    max_deal_price: int
-    min_lease_price: int
-    max_lease_price: int
+class NoticedAptModel(Model):
+    complex_id: int
+    noticed_apt_ids: List[int]
 
     class Config:
-        collection = "apt"
+        collection = "noticed_apt"

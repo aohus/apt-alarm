@@ -73,18 +73,17 @@ class NaverAPTScraper:
 
         self.driver.get(remaked_url)
         info = self.driver.find_element(By.XPATH, "/html/body/pre")
-        complex_list = (
+        complex_group_list = (
             json.loads(info.get_attribute("innerHTML")).get("data").get("COMPLEX")
         )
-        print(complex_list)
 
         # 큰 원으로 구성되어 있는 전체 매물 그룹(complex_list)을 load 하여 한 그룹씩 세부 쿼리 진행
         item_list = []
-        for complex in complex_list:
-            lgeo = complex["lgeo"]
-            count = complex["count"]
-            lat2 = complex["lat"]
-            lon2 = complex["lon"]
+        for complex_group in complex_group_list:
+            lgeo = complex_group["lgeo"]
+            count = complex_group["count"]
+            lat2 = complex_group["lat"]
+            lon2 = complex_group["lon"]
 
             remaked_url2 = f"https://m.land.naver.com/cluster/ajax/complexList?itemId={lgeo}&mapKey=&lgeo={lgeo}&rletTpCd={rletTpCd}&tradTpCd={tradTpCd}&z={z}&lat={lat2}&lon={lon2}&btm={btm}&lft={lft}&top={top}&rgt={rgt}&cortarNo={cortarNo}&isOnlyIsale=false&poiType=CC&preSaleComplexNumber={lgeo}"
             self.driver.get(remaked_url2)
@@ -94,9 +93,9 @@ class NaverAPTScraper:
             )
         return item_list
 
-    def get_available_apt(self, apt_id, trade_type="B1"):
+    def get_available_apt(self, complex_id, trade_type="B1"):
         # trade_type은 추후 필요시 추가 - 매매:A1, 전세:B1, 월세: B2, 매매전세:A1:B1
-        url = f"https://m.land.naver.com/complex/info/{apt_id}?tradTpCd={trade_type}&ptpNo=&bildNo=&articleListYN=Y"
+        url = f"https://m.land.naver.com/complex/info/{complex_id}?tradTpCd={trade_type}&ptpNo=&bildNo=&articleListYN=Y"
         self.driver.get(url)
         info = self.driver.find_element(
             By.CLASS_NAME,
@@ -107,26 +106,39 @@ class NaverAPTScraper:
         items = soup.find_all("div", {"class": "item_inner"})
 
         item_list = []
-        for item in items:
-            title = item.select_one("div > div.title_area > div > strong > em").text
-            building = item.select_one(
-                "div > div.title_area > div > strong > span"
-            ).text
-            type = item.select_one("div > div.info_area > div.price_area > span").text
-            price = item.select_one(
-                "div > div.info_area > div.price_area > strong"
-            ).text
-            details = item.select(
-                "div > div.info_area > div.information_area > p.info > span"
-            )
+        if items:
+            for item in items:
+                title = item.select_one("div > div.title_area > div > strong > em").text
+                building = item.select_one(
+                    "div > div.title_area > div > strong > span"
+                ).text
+                type = item.select_one(
+                    "div > div.info_area > div.price_area > span"
+                ).text
+                price = item.select_one(
+                    "div > div.info_area > div.price_area > strong"
+                ).text
+                details = item.select(
+                    "div > div.info_area > div.information_area > p.info > span"
+                )
 
-            for i, detail in enumerate(details):
-                if i == 0:
-                    size, floor, direction = detail.text.split(",")
-                else:
-                    describe = detail.text
+                for i, detail in enumerate(details):
+                    if i == 0:
+                        size, floor, direction = detail.text.split(",")
+                    else:
+                        describe = detail.text
 
-            item_list.append(
-                (title, building, type, price, size, floor, direction, describe)
-            )
+                item_list.append(
+                    (
+                        complex_id,
+                        title,
+                        building,
+                        type,
+                        price,
+                        size,
+                        floor,
+                        direction,
+                        describe,
+                    )
+                )
         return item_list

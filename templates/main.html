@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>부동산 정보</title>
+    <link href="https://unpkg.com/mvp.css" rel="stylesheet" />
+  </head>
+  <style>
+    section {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+    }
+    .small-button {
+      font-size: 12px;
+      padding: 4px 8px;
+    }
+    .form {
+      border: none;
+      padding: 0;
+      max-width: 15px;
+    }
+  </style>
+  <body>
+    <header>
+      <h1>부동산 알라미</h1>
+      <center>
+        <form id="search_form" action="/search">
+          <input
+            type="search"
+            placeholder="keyword"
+            id="search_input"
+            name="q"
+          />
+          <button type="submit">검색</button>
+        </form>
+      </center>
+    </header>
+    <main>
+      {% if complexes %}
+      <!--  -->
+      <center>
+        <h3 style="color: gray">{{complexes|length}}개 데이터 수집..</h3>
+      </center>
+      <section>
+        <table>
+          <thead>
+            <tr>
+              <th>아파트 매물</th>
+              <th>전세 매물 수</th>
+              <th>최소 전세가</th>
+              <th>최대 전세가</th>
+              <th>알림 신청</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for complex in complexes %}
+            <tr>
+              <td>{{ complex.complex_name }}</td>
+              <td>{{ complex.lease_count }}</td>
+              <td>{{ complex.min_deal_price }}</td>
+              <td>{{ complex.max_lease_price }}</td>
+              <td>
+                <form
+                  class="form"
+                  action="/interest/{{ complex.complex_id }}"
+                  method="post"
+                >
+                  <input type="hidden" name="complex" value="{{ complex }}" />
+                  <button class="small-button" type="submit">알림 받기</button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </section>
+
+      <hr />
+      <!--  -->
+      {% else %}
+      <center><h3 style="color: gray">Please Input Keyword...</h3></center>
+      {% endif %}
+    </main>
+  </body>
+</html>
