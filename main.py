@@ -9,7 +9,7 @@ import re
 import logging
 from datetime import datetime
 
-from models.model import ComplexModel, InterestModel, NoticedAptModel
+from models.model import ComplexModel, InterestModel, NoticedAptModel, Conditions
 
 
 app = FastAPI(title="부동산 정보", version="0.0.1")
@@ -89,24 +89,22 @@ async def get_interest_complex_list(request: Request):
         )  # 알림 요청한 아파트 단지가 없습니다.
 
 
-@app.post("/interest/{complex_id}", response_class=ORJSONResponse)
-async def add_interest_complex(complex_id: int, request: Request):
-    print(complex_id)
-    # data = complex.dict()
-    # print(complex.dict())
+@app.post("/interest/{complex_id}")
+async def add_interest_complex(complex_id: int, complex: ComplexModel):
+    print(complex.complex_name)
     interest_model = InterestModel(
         user_id="1",
         complex_id=complex_id,
-        complex_name="호반베르디움",
-        conditions={"min_size": 10, "min_floors": 1, "max_floors": 10, "price": 4},
+        complex_name=complex.complex_name,
+        conditions=Conditions(min_size=10, min_floors=1, max_floors=10, price=4),
     )
     await mongodb.engine.save(interest_model)  # 각 모델 인스턴스를 DB에 저장한다.
-    return {"status_code": 200}
+    return complex
 
 
 @app.patch("/interest/{complex_id}", response_class=HTMLResponse)
 async def patch_interest_complex(complex_id: int, request: Request):
-    data = request.json()
+    data = request.complex_id
     # TODO : user_id, complex_id 같은 것 있으면 지우고 추가, 뒤집어 쓰기
     interest_model = InterestModel(
         user_id=1,
