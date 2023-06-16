@@ -60,14 +60,17 @@
               <td>{{ complex.min_deal_price }}</td>
               <td>{{ complex.max_lease_price }}</td>
               <td>
-                <form
-                  class="form"
-                  action="/interest/{{ complex.complex_id }}"
-                  method="post"
-                >
-                  <input type="hidden" name="complex" value="{{ complex }}" />
-                  <button class="small-button" type="submit">알림 받기</button>
-                </form>
+                <input
+                  type="hidden"
+                  id="complex_id"
+                  value="{{ complex.complex_id }}"
+                />
+                <input
+                  type="hidden"
+                  id="complex_name"
+                  value="{{ complex.complex_name }}"
+                />
+                <button id="myButton" class="small-button">알림 받기</button>
               </td>
             </tr>
             {% endfor %}
@@ -82,4 +85,19 @@
       {% endif %}
     </main>
   </body>
+  <script>
+    document.getElementById('myButton').addEventListener('click', function () {
+      const complex_id = document.getElementById('complex_id').value
+      const complex_name = document.getElementById('complex_name').value
+
+      var formData = JSON.stringify({ complex_name: complex_name })
+      fetch(`/interest/${complex_id}`, {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+        },
+        body: formData,
+      })
+    })
+  </script>
 </html>
