@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>부동산 정보</title>
+    <link href="https://unpkg.com/mvp.css" rel="stylesheet" />
+  </head>
+  <style>
+    .small-button {
+      font-size: 12px;
+      padding: 4px 8px;
+    }
+  </style>
+  <body>
+    <header>
+      <h1>관심 아파트 목록</h1>
+      <button class="small-button" onclick="goToMainPage()">Go to Main Page</button>
+    </header>
+    <main>
+      {% if complexes %}
+      <section>
+        <table>
+          <thead>
+            <tr>
+              <th>아파트 이름</th>
+              <th>즉시 알림 조건</th>
+              <th>알림 취소</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for complex in complexes %}
+            <tr>
+              <td>{{ complex.complex_name }}</td>
+              <td>{{ complex.conditions }}</td>
+              </td>
+              <td>
+                <button
+                  id="myButton"
+                  class="small-button"
+                  onclick="sendData('{{ complex.complex_id }}', '{{ complex.complex_name }}', true)"
+                >
+                  알림 취소
+                </button>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </section>
+
+      <hr />
+      <!--  -->
+      {% else %} {% endif %}
+    </main>
+  </body>
+  <script>
+    function sendData(complex_id, complex_name, isCancel) {
+      console.log(complex_name)
+      var method = isCancel ? 'DELETE' : 'POST'
+      var formData = JSON.stringify({ complex_name: complex_name })
+      fetch(`/interest/${complex_id}`, {
+        method: method,
+        headers: {
+          'content-type': 'application/json',
+        },
+        body: formData,
+      })
+    }
+    function goToMainPage() {
+      window.location.href = '/'
+    }
+  </script>
+</html>
