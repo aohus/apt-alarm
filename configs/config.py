@@ -22,3 +22,5 @@ def get_secret(
 
 MONGO_DB_NAME = get_secret("MONGO_DB_NAME")
 MONGO_URL = get_secret("MONGO_URL")
+SLACK_CHANNEL = get_secret("SLACK_CHANNEL")
+SLACK_TOKEN = get_secret("SLACK_TOKEN")

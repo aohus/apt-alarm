@@ -11,6 +11,7 @@ router = APIRouter(prefix="/push", tags=["push"])
 push_controller = PushController()
 
 
-@router.put("/")
-def update_noticed_apt():
-    pass
+@router.patch("", status_code=200)
+async def push_alarm():
+    r = await push_controller.notice(104223)
+    return

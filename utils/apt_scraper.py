@@ -108,7 +108,7 @@ class NaverAPTScraper:
         item_list = []
         if items:
             for item in items:
-                item_id = item.select("div > a")
+                item_id = item.select_one("div > a")["href"].split("/")[-1]
                 title = item.select_one("div > div.title_area > div > strong > em").text
                 building = item.select_one(
                     "div > div.title_area > div > strong > span"
@@ -125,21 +125,22 @@ class NaverAPTScraper:
                 for i, detail in enumerate(details):
                     if i == 0:
                         size, floor, direction = detail.text.split(",")
+                        describe = ""
                     else:
                         describe = detail.text
 
                 item_list.append(
-                    (
-                        complex_id,
-                        item_id,
-                        title,
-                        building,
-                        type,
-                        price,
-                        size,
-                        floor,
-                        direction,
-                        describe,
-                    )
+                    {
+                        "complex_id": complex_id,
+                        "item_id": item_id,
+                        "title": title,
+                        "building": building,
+                        "type": type,
+                        "price": price,
+                        "size": size,
+                        "floor": floor,
+                        "direction": direction,
+                        "describe": describe,
+                    }
                 )
         return item_list

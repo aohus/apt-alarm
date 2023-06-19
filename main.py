@@ -3,6 +3,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 
 from configs.config import BASE_DIR
+from database import mongodb
 
 # from .dependencies import get_query_token, get_token_header
 from internal import admin
@@ -39,3 +40,19 @@ def root(request: Request):
 #     )
 #     context = {"request": request, "title": "My Page", "complexes": interest_complexes}
 #     return templates.TemplateResponse("mypage.html", context=context)
+
+
+@app.on_event("startup")
+async def on_app_start():
+    """
+    before app starts
+    """
+    mongodb.connect()
+
+
+@app.on_event("shutdown")
+async def on_app_shutdown():
+    """
+    after app shutdown
+    """
+    mongodb.close()

@@ -7,7 +7,7 @@ router = APIRouter(prefix="/complex", tags=["complex"])
 complex_controller = ComplexController()
 
 
-@router.get("/search")
+@router.get("/search", status_code=200)
 def get_complex_list(request: Request):
     complex_list = complex_controller.search_complex(request)
     return complex_list

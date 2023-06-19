@@ -21,9 +21,9 @@ class ComplexController:
                 )
             )
         await mongodb.engine.save_all(complex_model_list)  # 각 모델 인스턴스를 DB에 저장한다.
-        return "ok"
+        return
 
-    def search_complex(self, request: Request):
+    async def search_complex(self, request: Request):
         keyword = request.query_params.get("q")  # 쿼리에서 키워드 추출
         if not keyword:  # 키워드가 없다면 사용자에게 검색을 요구
             context = {"request": request}

@@ -3,7 +3,7 @@ from typing import Optional, List, Union
 
 
 class NoticedAptModel(Model):
-    complex_id: int
+    user_id: str
     noticed_apt_ids: List[int]
 
     class Config:

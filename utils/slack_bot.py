@@ -3,6 +3,7 @@ import socket
 import datetime
 from slack_sdk import WebClient
 from dataclasses import dataclass
+from configs.config import SLACK_TOKEN, SLACK_CHANNEL
 
 
 @dataclass
@@ -19,10 +20,13 @@ hex = {
 }
 
 
-token = os.getenv("SLACK_TOKEN")
+# token = os.getenv("SLACK_TOKEN")
+# client = WebClient(token=token)
+# channel = os.getenv("SLACK_CHANNEL")
+# host = socket.gethostname()
+token = SLACK_TOKEN
 client = WebClient(token=token)
-channel = os.getenv("SLACK_CHANNEL")
-host = socket.gethostname()
+channel = SLACK_CHANNEL
 
 
 def post_message(color: str, slack_content: SlackContent):
@@ -38,7 +42,7 @@ def generate_attachments(color: str, slack_content: SlackContent) -> str:
     if slack_content.error:
         msg += "*ERROR*\n```{}```".format(slack_content.error)
 
-    return [{"color": hex[color], "title": "rta-attention-generator", "text": msg}]
+    return [{"color": hex[color], "title": "매일 아파트 알림", "text": msg}]
 
 
 def info(message: str):
