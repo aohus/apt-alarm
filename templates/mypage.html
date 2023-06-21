@@ -56,7 +56,7 @@
     function sendData(complex_id, complex_name, isCancel) {
       console.log(complex_name)
       var method = isCancel ? 'DELETE' : 'POST'
-      var formData = JSON.stringify({ complex_name: complex_name })
+      var formData = JSON.stringify({ complex_id: complex_id, complex_name: complex_name })
       fetch(`/interest/${complex_id}`, {
         method: method,
         headers: {

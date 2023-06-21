@@ -6,6 +6,7 @@ from configs.config import BASE_DIR
 from database import mongodb
 
 # from .dependencies import get_query_token, get_token_header
+from interest.interest_model import InterestModel
 from internal import admin
 from routers import complex, interest, push
 
@@ -32,14 +33,14 @@ def root(request: Request):
     return templates.TemplateResponse("main.html", context=context)
 
 
-# @app.get("/mypage", response_class=HTMLResponse)
-# async def mypage(request: Request):
-#     # if login :
-#     interest_complexes = await mongodb.engine.find(
-#         InterestModel, InterestModel.user_id == "1"
-#     )
-#     context = {"request": request, "title": "My Page", "complexes": interest_complexes}
-#     return templates.TemplateResponse("mypage.html", context=context)
+@app.get("/mypage", response_class=HTMLResponse)
+async def mypage(request: Request):
+    # if login :
+    interest_complexes = await mongodb.engine.find(
+        InterestModel, InterestModel.user_id == "1"
+    )
+    context = {"request": request, "title": "My Page", "complexes": interest_complexes}
+    return templates.TemplateResponse("mypage.html", context=context)
 
 
 @app.on_event("startup")

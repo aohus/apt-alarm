@@ -2,13 +2,12 @@ from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 from bs4 import BeautifulSoup
-import time
 from selenium.webdriver.common.by import By
-import re
-import math
-import requests
-import json
+
+import re, math, json
+import logging
 from typing import List, Dict, Optional
+from . import slackbot
 
 
 class NaverAPTScraper:
@@ -101,9 +100,14 @@ class NaverAPTScraper:
             By.CLASS_NAME,
             "article_box.article_box--sale._article",
         )
+
         html = info.get_attribute("innerHTML")
         soup = BeautifulSoup(html, "html.parser")
         items = soup.find_all("div", {"class": "item_inner"})
+
+        if len(items) == 0:
+            logging.info(f"complex_id: {complex_id} 네이버 부동산 연결 실패")
+            slackbot.warning(f"complex_id: {complex_id} 네이버 부동산 연결에 실패했습니다.")
 
         item_list = []
         if items:

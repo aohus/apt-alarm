@@ -24,6 +24,7 @@
     <header>
       <h1>부동산 알라미</h1>
       <center>
+        <!-- TODO: 프론트 코드 분리, 여기를 onclick event로 바꾸고 프론트 코드를 수정하며 될듯 -->
         <form id="search_form" action="/complex/search">
           <input
             type="search"
@@ -64,7 +65,7 @@
                 <button
                   id="myButton"
                   class="small-button"
-                  onclick="sendData('{{ complex.complex_id }}', '{{ complex.complex_name }}')"
+                  onclick="sendInterestComplex('{{ complex.complex_id }}', '{{ complex.complex_name }}')"
                 >
                   알림 받기
                 </button>
@@ -83,10 +84,14 @@
     </main>
   </body>
   <script>
-    function sendData(complex_id, complex_name) {
-      console.log(complex_name)
+    function sendInterestComplex(complex_id, complex_name) {
+      console.log(complex_id, complex_name)
 
-      var formData = JSON.stringify({ complex_name: complex_name })
+      var formData = JSON.stringify({
+        complex_id: complex_id,
+        complex_name: complex_name,
+      })
+
       fetch(`/interest/${complex_id}`, {
         method: 'POST',
         headers: {
@@ -95,6 +100,7 @@
         body: formData,
       })
     }
+
     function goToMyPage() {
       window.location.href = '/mypage'
     }

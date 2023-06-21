@@ -3,7 +3,7 @@ from fastapi import Depends, Request
 from database import mongodb
 from utils.apt_scraper import NaverAPTScraper
 from complex.complex_model import ComplexModel
-from .interest_model import InterestModel
+from .interest_model import InterestModel, Conditions
 from typing import List
 
 
@@ -20,7 +20,6 @@ class InterestController:
                 InterestModel, InterestModel.user_id == "1"
             )
             # context = {"request": request, "user_id": 1, "complex_list": complex_list}
-            print(complex_list)
             return complex_list
         else:
             return "no list"
