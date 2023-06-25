@@ -31,7 +31,6 @@ class PushController:
             )
             filtered_apt = await self._check_noticed(filtered_apt)
             available_apt_list.extend(filtered_apt)
-
             if morning:
                 slackbot.post_apt_message(complex.complex_name, filtered_apt)
             elif ":new:" in [apt["noticed_label"] for apt in filtered_apt]:
@@ -39,9 +38,6 @@ class PushController:
                     apt for apt in filtered_apt if apt["noticed_label"] == ":new:"
                 ]
                 slackbot.post_apt_message(complex.complex_name, new_apt)
-            else:
-                return "any new apt"
-
         await self._update_noticed_apt(available_apt_list)
         return available_apt_list
 
@@ -81,7 +77,7 @@ class PushController:
         )
         for apt in filtered_apt:
             if noticed_apt and apt["item_id"] in noticed_apt.noticed_apt_ids:
-                apt["noticed_label"] = ":확인_표시가_있는_투표함:"
+                apt["noticed_label"] = ":ballot_box_with_check:"
             else:
                 apt["noticed_label"] = ":new:"
         return filtered_apt
