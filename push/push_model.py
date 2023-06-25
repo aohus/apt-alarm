@@ -4,7 +4,7 @@ from typing import Optional, List, Union
 
 class NoticedAptModel(Model):
     user_id: str
-    noticed_apt_ids: List[int]
+    noticed_apt_ids: List[str]
 
     class Config:
         collection = "noticed_apt"

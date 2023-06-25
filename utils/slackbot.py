@@ -46,8 +46,8 @@ def generate_apt_info(complex_name: str, available_apt_list: List[Dict]):
 
     row_text = ""
     for apt in available_apt_list:
-        row_text += "<https://m.land.naver.com/article/info/{}|아파트이름: {}>\n".format(
-            apt.get("item_id"), apt.get("title")
+        row_text += "{} <https://m.land.naver.com/article/info/{}|아파트이름: {}>\n".format(
+            apt.get("noticed_label"), apt.get("item_id"), apt.get("title")
         )
         row_text += "동: {}\n".format(apt.get("building"))
         row_text += "가격: {}\n".format(apt.get("price"))
@@ -62,7 +62,7 @@ def generate_apt_info(complex_name: str, available_apt_list: List[Dict]):
     blocks = [
         {
             "type": "section",
-            "text": {"type": "mrkdwn", "text": f"```\n{row_text}\n```"},
+            "text": {"type": "mrkdwn", "text": f"{row_text}"},
         }
     ]
     return {
