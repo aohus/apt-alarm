@@ -12,7 +12,8 @@ RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
 
 # Copy the entire project directory into the container
-COPY . .
+COPY app app
+COPY driver/* /app/
 
 # Expose the port on which the FastAPI server will run
 EXPOSE 8000
