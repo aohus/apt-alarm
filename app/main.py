@@ -9,6 +9,13 @@ from database import mongodb
 from interest.interest_model import InterestModel
 from internal import admin
 from routers import complex, interest, push
+import logging
+
+logging.basicConfig(
+    format="[%(asctime)s] [%(levelname)s] %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+    level=logging.INFO,
+)
 
 # app = FastAPI(dependencies=[Depends(get_query_token)])
 app = FastAPI()

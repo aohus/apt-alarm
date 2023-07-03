@@ -13,8 +13,8 @@ import datetime
 import re
 from typing import List, Dict, Optional
 
-# morning = datetime.datetime.now().hour == 9
-morning = True
+
+morning = datetime.datetime.now().hour == 9
 
 
 class PushController:
@@ -40,6 +40,9 @@ class PushController:
                         apt for apt in filtered_apt if apt["noticed_label"] == ":new:"
                     ]
                     slackbot.post_apt_message(complex.complex_name, new_apt)
+                logging.info(
+                    f"[PushController.noticed] push slack message success : {complex.complex_name}"
+                )
             except Exception as e:
                 report.report_error(
                     f"An error occurred while processing complex {complex.complex_name}: {str(e)}",
@@ -94,12 +97,19 @@ class PushController:
             NoticedAptModel, NoticedAptModel.user_id == "1"
         )
         if noticed_apt:
-            noticed_apt.noticed_apt_ids = [apt["item_id"] for apt in noticed_list]
+            noticed_apt.noticed_apt_ids = list(
+                set(noticed_apt.noticed_apt_ids).union(
+                    {apt["item_id"] for apt in noticed_list}
+                )
+            )
         else:
             noticed_apt = NoticedAptModel(
                 user_id="1",
                 noticed_apt_ids=[apt["item_id"] for apt in noticed_list],
             )
         r = await mongodb.engine.save(noticed_apt)
-        # TODO: logging.info()
+        logging.info(
+            f"[PushController._update_noticed_apt] noticed apt update success "
+            f"=> user_id:1, noticed_apt count: {len(noticed_apt.noticed_apt_ids)}"
+        )
         return

@@ -21,6 +21,9 @@ class NaverAPTScraper:
         driver = webdriver.Chrome(
             service=Service(ChromeDriverManager().install()), options=chrome_options
         )
+        logging.info(
+            f"[NaverAPTScraper._set_chrome_driver] setting chrome driver success"
+        )
         return driver
 
     def _make_url(self, search_target: str, **kwargs):
@@ -158,6 +161,9 @@ class NaverAPTScraper:
                 "cluster", By.XPATH, "/html/body/pre", **complex
             )
             item_list.extend([d for d in json.loads(info).get("result")])
+        logging.info(
+            f"[NaverAPTScraper.get_complex_info] item_list :{item_list}, item_list_len:{len(item_list)}"
+        )
         return item_list
 
     def _extract_item_info(self, item, complex_id) -> Dict:
@@ -206,4 +212,7 @@ class NaverAPTScraper:
         for item in items:
             item_info = self._extract_item_info(item, complex_id)
             item_list.append(item_info)
+        logging.info(
+            f"[NaverAPTScraper.get_available_apt] item_list :{item_list}, item_list_len:{len(item_list)}"
+        )
         return item_list

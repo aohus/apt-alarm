@@ -16,6 +16,7 @@ complex_controller = ComplexController()
 @router.get("/search", status_code=200)
 async def get_complex_list(request: Request):
     complex_list = await complex_controller.search_complex(request)
+    logging.info(f"complex_list: {complex_list}")
     return templates.TemplateResponse(
         "main.html", context={"request": request, "complexes": complex_list}
     )
