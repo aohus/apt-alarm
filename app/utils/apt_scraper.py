@@ -131,18 +131,11 @@ class NaverAPTScraper:
         pattern = r"filter:\s*({[^}]+})"
         matches = re.search(pattern, info)
 
-        try:
-            filter_value = matches.group(1)
-            locations = {}
-            pairs = re.findall(r"(\w+)\s*:\s*'([^']*)'", filter_value)
-            for key, value in pairs:
-                locations[key] = value
-        except Exception as e:
-            report.report_error(f"keyword: {keyword}에 필요한 위치 정보가 없습니다.", str(e))
-            raise HTTPException(
-                status_code=400,
-                detail=f"{keyword}에 필요한 위치 정보가 없습니다. 다른 지역을 검색해주세요.",
-            )
+        filter_value = matches.group(1)
+        locations = {}
+        pairs = re.findall(r"(\w+)\s*:\s*'([^']*)'", filter_value)
+        for key, value in pairs:
+            locations[key] = value
         return locations
 
     def get_complex_info(self, keyword: str) -> List[Dict]:
@@ -162,7 +155,7 @@ class NaverAPTScraper:
             )
             item_list.extend([d for d in json.loads(info).get("result")])
         logging.info(
-            f"[NaverAPTScraper.get_complex_info] item_list :{item_list}, item_list_len:{len(item_list)}"
+            f"[NaverAPTScraper.get_complex_info] item_list_len:{len(item_list)}"
         )
         return item_list
 
@@ -206,6 +199,12 @@ class NaverAPTScraper:
             trade_type=trade_type,
         )
         soup = BeautifulSoup(html, "html.parser")
+        if soup is None:
+            raise HTTPException(
+                status_code=404,
+                detail=f"네이버 부동산 연결에 실패했습니다.",
+            )
+
         items = soup.find_all("div", {"class": "item_inner"})
 
         item_list = []
@@ -213,6 +212,6 @@ class NaverAPTScraper:
             item_info = self._extract_item_info(item, complex_id)
             item_list.append(item_info)
         logging.info(
-            f"[NaverAPTScraper.get_available_apt] item_list :{item_list}, item_list_len:{len(item_list)}"
+            f"[NaverAPTScraper.get_available_apt] item_list_len: {len(item_list)}"
         )
         return item_list

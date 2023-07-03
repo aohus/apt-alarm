@@ -26,28 +26,24 @@ class PushController:
         for complex in interest_complex_list:
             # TODO: (고민) 연속으로 scraping 하면 네이버에서 막아버려서, 단지마다 instance 새로 할당.... 이게 맞나?
             naver_apt_scraper = NaverAPTScraper()
-            try:
-                available_apt = naver_apt_scraper.get_available_apt(complex.complex_id)
-                filtered_apt = await self._check_condition(
-                    complex.complex_id, available_apt
-                )
-                filtered_apt = await self._check_noticed(filtered_apt)
-                available_apt_list.extend(filtered_apt)
-                if morning:
-                    slackbot.post_apt_message(complex.complex_name, filtered_apt)
-                elif any(apt["noticed_label"] == ":new:" for apt in filtered_apt):
-                    new_apt = [
-                        apt for apt in filtered_apt if apt["noticed_label"] == ":new:"
-                    ]
-                    slackbot.post_apt_message(complex.complex_name, new_apt)
-                logging.info(
-                    f"[PushController.noticed] push slack message success : {complex.complex_name}"
-                )
-            except Exception as e:
-                report.report_error(
-                    f"An error occurred while processing complex {complex.complex_name}: {str(e)}",
-                    str(e),
-                )
+            available_apt = naver_apt_scraper.get_available_apt(complex.complex_id)
+            filtered_apt = await self._check_condition(
+                complex.complex_id, available_apt
+            )
+            filtered_apt = await self._check_noticed(filtered_apt)
+            available_apt_list.extend(filtered_apt)
+
+            if morning:
+                slackbot.post_apt_message(complex.complex_name, filtered_apt)
+            elif any(apt["noticed_label"] == ":new:" for apt in filtered_apt):
+                new_apt = [
+                    apt for apt in filtered_apt if apt["noticed_label"] == ":new:"
+                ]
+                slackbot.post_apt_message(complex.complex_name, new_apt)
+
+            logging.info(
+                f"[PushController.noticed] {complex.complex_name} push filtered_apt len : {len(filtered_apt)}"
+            )
         await self._update_noticed_apt(available_apt_list)
         return available_apt_list
 

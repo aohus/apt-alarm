@@ -3,6 +3,7 @@ from configs.config import BASE_DIR
 from complex.complex_crud import ComplexController
 
 # TODO: 분리 후 삭제
+import logging
 from fastapi.templating import Jinja2Templates
 from configs.config import BASE_DIR
 
