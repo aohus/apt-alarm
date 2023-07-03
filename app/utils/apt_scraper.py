@@ -1,3 +1,4 @@
+from fastapi import HTTPException
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
@@ -7,7 +8,7 @@ from selenium.webdriver.common.by import By
 import re, math, json
 import logging
 from typing import List, Dict, Optional
-from . import slackbot
+from . import slackbot, report
 
 
 class NaverAPTScraper:
@@ -22,11 +23,11 @@ class NaverAPTScraper:
         )
         return driver
 
-    def _make_url(self, search_type: str, **kwargs):
+    def _make_url(self, search_target: str, **kwargs):
         var = kwargs
-        if search_type == "dong":
+        if search_target == "dong":
             return f"https://m.land.naver.com/search/result/{var.get('keyword')}"
-        elif search_type == "cluster_group":
+        elif search_target == "cluster_group":
             cortarNo = var.get("cortarNo")
             z = var.get("z")
             lat = var.get("lat")
@@ -55,7 +56,7 @@ class NaverAPTScraper:
                 f"&rgt={rgt}"
                 f"&addon=COMPLEX&isOnlyIsale=false"
             )
-        elif search_type == "cluster":
+        elif search_target == "cluster":
             cortarNo = var.get("cortarNo")
             z = var.get("z")
             lgeo = var.get("lgeo")
@@ -64,10 +65,10 @@ class NaverAPTScraper:
 
             lat_margin = 0.118
             lon_margin = 0.111
-            btm = float(lat) - lat_margin
-            lft = float(lon) - lon_margin
-            top = float(lat) + lat_margin
-            rgt = float(lon) + lon_margin
+            btm = float(lat2) - lat_margin
+            lft = float(lon2) - lon_margin
+            top = float(lat2) + lat_margin
+            rgt = float(lon2) + lon_margin
 
             rletTpCd = "APT"
             tradTpCd = "A1:B1"
@@ -90,7 +91,7 @@ class NaverAPTScraper:
                 f"&isOnlyIsale=false&poiType=CC"
                 f"&preSaleComplexNumber={lgeo}"
             )
-        elif search_type == "complex":
+        elif search_target == "complex":
             return (
                 "https://m.land.naver.com/complex/info/"
                 f"{var.get('complex_id')}"
@@ -99,14 +100,26 @@ class NaverAPTScraper:
             )
 
     def _get_html_element(
-        self, search_type: str, method: By, matching_element: str, **kwargs
+        self, search_target: str, method: By, matching_element: str, **kwargs
     ) -> str:
-        url = self._make_url(search_type, **kwargs)
-        self.driver.get(url)
-        html = self.driver.find_element(method, matching_element)
-        return html.get_attribute("innerHTML")
+        url = self._make_url(search_target, **kwargs)
+        try:
+            self.driver.get(url)
+            html = self.driver.find_element(method, matching_element).get_attribute(
+                "innerHTML"
+            )
+            return html
+        except Exception as e:
+            report.report_error(
+                f"주어진 페이지에서 원하는 정보를 찾지 못했습니다. \n search_target: {search_target}, url: {url}",
+                str(e),
+            )
+            raise HTTPException(
+                status_code=400,
+                detail=f"주어진 페이지에서 원하는 정보를 찾지 못했습니다. 'ㅇㅇ구 ㅇㅇ동' 형식으로 정확히 지역 이름을 입력해주세요.",
+            )
 
-    def _search(self, keyword: str) -> Dict:
+    def _get_location_info(self, keyword: str) -> Dict:
         info = self._get_html_element(
             "dong", By.XPATH, "//*[@id='mapSearch']/script", keyword=keyword
         )
@@ -115,31 +128,67 @@ class NaverAPTScraper:
         pattern = r"filter:\s*({[^}]+})"
         matches = re.search(pattern, info)
 
-        if matches:
+        try:
             filter_value = matches.group(1)
-            filter_dict = {}
+            locations = {}
             pairs = re.findall(r"(\w+)\s*:\s*'([^']*)'", filter_value)
             for key, value in pairs:
-                filter_dict[key] = value
-        else:
-            print("해당 패턴을 찾을 수 없습니다.")
-        return filter_dict
+                locations[key] = value
+        except Exception as e:
+            report.report_error(f"keyword: {keyword}에 필요한 위치 정보가 없습니다.", str(e))
+            raise HTTPException(
+                status_code=400,
+                detail=f"{keyword}에 필요한 위치 정보가 없습니다. 다른 지역을 검색해주세요.",
+            )
+        return locations
 
     def get_complex_info(self, keyword: str) -> List[Dict]:
-        filter_dict = self._search(keyword)
+        locations = self._get_location_info(keyword)
         info = self._get_html_element(
-            "cluster_group", By.XPATH, "/html/body/pre", **filter_dict
+            "cluster_group", By.XPATH, "/html/body/pre", **locations
         )
         complex_group_list = json.loads(info).get("data").get("COMPLEX")
 
         # 큰 원으로 구성되어 있는 전체 매물 그룹(complex_list)을 load 하여 한 그룹씩 세부 쿼리 진행
         item_list = []
         for complex in complex_group_list:
+            complex["cortarNo"] = locations["cortarNo"]
+            complex["z"] = locations["z"]
             info = self._get_html_element(
-                "cluster", By.XPATH, "/html/body/pre", **filter_dict, **complex
+                "cluster", By.XPATH, "/html/body/pre", **complex
             )
             item_list.extend([d for d in json.loads(info).get("result")])
         return item_list
+
+    def _extract_item_info(self, item, complex_id) -> Dict:
+        item_id = item.select_one("div > a")["href"].split("/")[-1]
+        title = item.select_one("div > div.title_area > div > strong > em").text
+        building = item.select_one("div > div.title_area > div > strong > span").text
+        type = item.select_one("div > div.info_area > div.price_area > span").text
+        price = item.select_one("div > div.info_area > div.price_area > strong").text
+        details = item.select(
+            "div > div.info_area > div.information_area > p.info > span"
+        )
+        for i, detail in enumerate(details):
+            if i == 0:
+                size, floor, direction = detail.text.split(",")
+                describe = ""
+            else:
+                describe = detail.text
+
+        item_info = {
+            "complex_id": complex_id,
+            "item_id": item_id,
+            "title": title,
+            "building": building,
+            "type": type,
+            "price": price,
+            "size": size,
+            "floor": floor,
+            "direction": direction,
+            "describe": describe,
+        }
+        return item_info
 
     def get_available_apt(self, complex_id, trade_type="B1"):
         # trade_type은 추후 필요시 추가 - 매매:A1, 전세:B1, 월세: B2, 매매전세:A1:B1
@@ -153,46 +202,8 @@ class NaverAPTScraper:
         soup = BeautifulSoup(html, "html.parser")
         items = soup.find_all("div", {"class": "item_inner"})
 
-        if len(items) == 0:
-            logging.info(f"complex_id: {complex_id} 네이버 부동산 연결 실패")
-            slackbot.warning(f"complex_id: {complex_id} 네이버 부동산 연결에 실패했습니다.")
-
         item_list = []
-        if items:
-            for item in items:
-                item_id = item.select_one("div > a")["href"].split("/")[-1]
-                title = item.select_one("div > div.title_area > div > strong > em").text
-                building = item.select_one(
-                    "div > div.title_area > div > strong > span"
-                ).text
-                type = item.select_one(
-                    "div > div.info_area > div.price_area > span"
-                ).text
-                price = item.select_one(
-                    "div > div.info_area > div.price_area > strong"
-                ).text
-                details = item.select(
-                    "div > div.info_area > div.information_area > p.info > span"
-                )
-                for i, detail in enumerate(details):
-                    if i == 0:
-                        size, floor, direction = detail.text.split(",")
-                        describe = ""
-                    else:
-                        describe = detail.text
-
-                item_list.append(
-                    {
-                        "complex_id": complex_id,
-                        "item_id": item_id,
-                        "title": title,
-                        "building": building,
-                        "type": type,
-                        "price": price,
-                        "size": size,
-                        "floor": floor,
-                        "direction": direction,
-                        "describe": describe,
-                    }
-                )
+        for item in items:
+            item_info = self._extract_item_info(item, complex_id)
+            item_list.append(item_info)
         return item_list
