@@ -23,17 +23,14 @@
    ```
    $ docker-compose up --build
    ```
-2. webrowser 로 접속
+2. webrowser(home: http://localhost:8000/) 로 접속
 
-   - home : http://localhost:8000/
-
-   1. 정확한 '동'명 검색  
+   - 정확한 '동'명 검색  
       ex.
-      - 서초구 양재동
-      - 영통구 하동
-   2. 동네별 아파트 단지 중 알림을 원하는 단지 추가
-
-   3. mypage에서 알림 취소 / 조건 설정(#TODO)
+     - 서초구 양재동
+     - 영통구 하동
+   - 동네별 아파트 단지 중 알림을 원하는 단지 추가
+   - mypage에서 알림 취소 / 조건 설정(#TODO)
 
 3. crontab 설정
 
