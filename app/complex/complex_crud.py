@@ -51,17 +51,17 @@ class ComplexController:
                 {
                     "complex_id": int(complex["hscpNo"]),
                     "complex_name": complex["hscpNm"],
+                    "lease_count": int(complex["leaseCnt"]),
+                    "min_lease_price": regex(complex, "leasePrcMin"),
+                    "max_lease_price": regex(complex, "leasePrcMax"),
                     # "total_dong_count": complex["totDongCnt"],
                     # "total_apt_count": int(complex["totHsehCnt"]),
                     # "approved_date": complex["useAprvYmd"],
                     # "deal_count": int(complex["dealCnt"]),
-                    # "lease_count": int(complex["leaseCnt"]),
                     # "min_space": float(complex["minSpc"]),
                     # "max_space": float(complex["maxSpc"]),
                     # "min_deal_price": regex(complex, "dealPrcMin"),
                     # "max_deal_price": regex(complex, "dealPrcMax"),
-                    # "min_lease_price": regex(complex, "leasePrcMin"),
-                    # "max_lease_price": regex(complex, "leasePrcMax"),
                 }
             )
         # self._create_complex(regular_complex_list)

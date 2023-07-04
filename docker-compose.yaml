@@ -25,8 +25,8 @@ services:
     environment:
       - MONGO_DB_NAME=apt-alarm
       - MONGO_DB_URL=mongodb://mongodb:27017
-      - SLACK_CHANNEL=YOUR_CHANNEL
-      - SLACK_TOKEN=YOUR_TOKEN
+      - SLACK_CHANNEL={YOUR_CHANNEL}
+      - SLACK_TOKEN={YOUR_TOKEN}
     restart: always
 
 volumes:
