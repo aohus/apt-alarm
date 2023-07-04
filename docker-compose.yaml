@@ -8,9 +8,9 @@ services:
     volumes:
       - mongodb_data:/data/db
     environment:
-      - MONGO_INITDB_DATABASE=apt-alarm
-      - MONGO_INITDB_ROOT_USERNAME=admin
-      - MONGO_INITDB_ROOT_PASSWORD=password
+      - MONGO_DB_NAME=apt-alarm
+      - MONGO_DB_ROOT_USERNAME=admin
+      - MONGO_DB_ROOT_PASSWORD=password
     restart: always
 
   fastapi:
@@ -23,8 +23,10 @@ services:
     depends_on:
       - mongodb
     environment:
-      - MONGO_HOST=mongodb://mongodb:27017
-      - MONGO_DB=apt-alarm
+      - MONGO_DB_NAME=apt-alarm
+      - MONGO_DB_URL=mongodb://mongodb:27017
+      - SLACK_CHANNEL=YOUR_CHANNEL
+      - SLACK_TOKEN=YOUR_TOKEN
     restart: always
 
 volumes:

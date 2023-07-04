@@ -4,7 +4,8 @@ import datetime
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
 from dataclasses import dataclass
-from configs.config import SLACK_TOKEN, SLACK_CHANNEL
+
+# from configs.config import SLACK_TOKEN, SLACK_CHANNEL
 from tabulate import tabulate
 from typing import List, Dict
 
@@ -23,13 +24,14 @@ hex = {
 }
 
 
-# token = os.getenv("SLACK_TOKEN")
-# client = WebClient(token=token)
-# channel = os.getenv("SLACK_CHANNEL")
-# host = socket.gethostname()
-token = SLACK_TOKEN
+token = os.getenv("SLACK_TOKEN")
 client = WebClient(token=token)
-channel = SLACK_CHANNEL
+channel = os.getenv("SLACK_CHANNEL")
+# host = socket.gethostname()
+
+# token = SLACK_TOKEN
+# client = WebClient(token=token)
+# channel = SLACK_CHANNEL
 
 
 def post_apt_message(complex_name: str, available_apt_list: List[Dict]):

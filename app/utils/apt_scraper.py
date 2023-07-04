@@ -18,9 +18,8 @@ class NaverAPTScraper:
     def _set_chrome_driver(self):
         chrome_options = webdriver.ChromeOptions()
         chrome_options.add_argument("headless")
-        driver = webdriver.Chrome(
-            service=Service(ChromeDriverManager().install()), options=chrome_options
-        )
+        chrome_options.add_argument("--no-sandbox")
+        driver = webdriver.Chrome(options=chrome_options)
         logging.info(
             f"[NaverAPTScraper._set_chrome_driver] setting chrome driver success"
         )
