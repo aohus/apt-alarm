@@ -30,6 +30,8 @@ class PushController:
             ]
         )
         for complex in available_complex_list:
+            if complex is None:
+                continue
             filtered_apt = await self._check_condition(
                 complex[0]["complex_id"], complex
             )

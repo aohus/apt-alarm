@@ -21,11 +21,11 @@ class NaverAPTScraper:
     def _set_chrome_driver(self):
         chrome_options = webdriver.ChromeOptions()
         chrome_options.add_argument("headless")
-        # chrome_options.add_argument("--no-sandbox")
-        # driver = webdriver.Chrome(options=chrome_options)
-        driver = webdriver.Chrome(
-            service=Service(ChromeDriverManager().install()), options=chrome_options
-        )
+        chrome_options.add_argument("--no-sandbox")
+        driver = webdriver.Chrome(options=chrome_options)
+        # driver = webdriver.Chrome(
+        #     service=Service(ChromeDriverManager().install()), options=chrome_options
+        # )
         logging.info(
             f"[NaverAPTScraper._set_chrome_driver] setting chrome driver success"
         )
@@ -190,6 +190,7 @@ class NaverAPTScraper:
                 break
 
             if len(result["list"]) == 0:
+                logging.info(f"no available apt for {complex_id}")
                 break
 
             item_list = []
@@ -208,7 +209,6 @@ class NaverAPTScraper:
                     "describe": item.get("atclFetrDesc", ""),
                 }
                 item_list.append(item_info)
-                print(item_info)
             logging.info(
                 f"[NaverAPTScraper.get_available_apt] item_list_len: {len(item_list)}"
             )
