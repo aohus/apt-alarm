@@ -23,26 +23,29 @@ class PushController:
             "user_id"
         )
         available_apt_list = []
-        for complex in interest_complex_list:
-            # TODO: (고민) 연속으로 scraping 하면 네이버에서 막아버려서, 단지마다 instance 새로 할당.... 이게 맞나?
-            naver_apt_scraper = NaverAPTScraper()
-            available_apt = naver_apt_scraper.get_available_apt(complex.complex_id)
+        available_complex_list = await asyncio.gather(
+            *[
+                NaverAPTScraper.get_available_apt(complex.complex_id)
+                for complex in interest_complex_list
+            ]
+        )
+        for complex in available_complex_list:
             filtered_apt = await self._check_condition(
-                complex.complex_id, available_apt
+                complex[0]["complex_id"], complex
             )
             filtered_apt = await self._check_noticed(filtered_apt)
             available_apt_list.extend(filtered_apt)
 
             if morning:
-                slackbot.post_apt_message(complex.complex_name, filtered_apt)
+                slackbot.post_apt_message(complex[0]["complex_name"], filtered_apt)
             elif any(apt["noticed_label"] == ":new:" for apt in filtered_apt):
                 new_apt = [
                     apt for apt in filtered_apt if apt["noticed_label"] == ":new:"
                 ]
-                slackbot.post_apt_message(complex.complex_name, new_apt)
+                slackbot.post_apt_message(complex[0]["complex_name"], new_apt)
 
             logging.info(
-                f"[PushController.noticed] {complex.complex_name} push filtered_apt len : {len(filtered_apt)}"
+                f"[PushController.noticed] {complex[0]['complex_name']} push filtered_apt len : {len(filtered_apt)}"
             )
         await self._update_noticed_apt(available_apt_list)
         return available_apt_list

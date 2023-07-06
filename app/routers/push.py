@@ -14,10 +14,4 @@ async def push_alarm():
     response = await push_controller.notice()
     end_time = datetime.datetime.now()
     logging.info(end_time - start_time)
-    if response:
-        return
-    else:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Bad request",
-        )
+    return

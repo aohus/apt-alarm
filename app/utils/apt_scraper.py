@@ -4,10 +4,13 @@ from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 from bs4 import BeautifulSoup
 from selenium.webdriver.common.by import By
+import requests
 
+import datetime
 import re, math, json
 import logging
 from typing import List, Dict, Optional
+
 from . import slackbot, report
 
 
@@ -18,8 +21,11 @@ class NaverAPTScraper:
     def _set_chrome_driver(self):
         chrome_options = webdriver.ChromeOptions()
         chrome_options.add_argument("headless")
-        chrome_options.add_argument("--no-sandbox")
-        driver = webdriver.Chrome(options=chrome_options)
+        # chrome_options.add_argument("--no-sandbox")
+        # driver = webdriver.Chrome(options=chrome_options)
+        driver = webdriver.Chrome(
+            service=Service(ChromeDriverManager().install()), options=chrome_options
+        )
         logging.info(
             f"[NaverAPTScraper._set_chrome_driver] setting chrome driver success"
         )
@@ -93,13 +99,6 @@ class NaverAPTScraper:
                 f"&isOnlyIsale=false&poiType=CC"
                 f"&preSaleComplexNumber={lgeo}"
             )
-        elif search_target == "complex":
-            return (
-                "https://m.land.naver.com/complex/info/"
-                f"{var.get('complex_id')}"
-                f"?tradTpCd={var.get('trade_type')}"
-                f"&ptpNo=&bildNo=&articleListYN=Y"
-            )
 
     def _get_html_element(
         self, search_target: str, method: By, matching_element: str, **kwargs
@@ -158,59 +157,63 @@ class NaverAPTScraper:
         )
         return item_list
 
-    def _extract_item_info(self, item, complex_id) -> Dict:
-        item_id = item.select_one("div > a")["href"].split("/")[-1]
-        title = item.select_one("div > div.title_area > div > strong > em").text
-        building = item.select_one("div > div.title_area > div > strong > span").text
-        type = item.select_one("div > div.info_area > div.price_area > span").text
-        price = item.select_one("div > div.info_area > div.price_area > strong").text
-        details = item.select(
-            "div > div.info_area > div.information_area > p.info > span"
-        )
-        for i, detail in enumerate(details):
-            if i == 0:
-                size, floor, direction = detail.text.split(",")
-                describe = ""
-            else:
-                describe = detail.text
-
-        item_info = {
-            "complex_id": complex_id,
-            "item_id": item_id,
-            "title": title,
-            "building": building,
-            "type": type,
-            "price": price,
-            "size": size,
-            "floor": floor,
-            "direction": direction,
-            "describe": describe,
+    @staticmethod
+    async def get_available_apt(complex_id, trade_type="B1"):
+        URL = "https://m.land.naver.com/complex/getComplexArticleList"
+        param = {
+            "hscpNo": f"{complex_id}",
+            "tradTpCd": f"{trade_type}",
+            "order": "point_",
+            "showR0": "N",
         }
-        return item_info
 
-    def get_available_apt(self, complex_id, trade_type="B1"):
-        # trade_type은 추후 필요시 추가 - 매매:A1, 전세:B1, 월세: B2, 매매전세:A1:B1
-        html = self._get_html_element(
-            "complex",
-            By.CLASS_NAME,
-            "article_box.article_box--sale._article",
-            complex_id=complex_id,
-            trade_type=trade_type,
-        )
-        soup = BeautifulSoup(html, "html.parser")
-        if soup is None:
-            raise HTTPException(
-                status_code=404,
-                detail=f"네이버 부동산 연결에 실패했습니다.",
+        header = {
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36",
+            "Referer": "https://m.land.naver.com/",
+        }
+
+        page = 0
+        while True:
+            page += 1
+            param["page"] = page
+
+            resp = requests.get(URL, params=param, headers=header)
+            if resp.status_code != 200:
+                report.report_error(f"invalid status: {resp.status_code}")
+                break
+
+            data = json.loads(resp.text)
+            result = data["result"]
+
+            if result is None:
+                logging.error("no result")
+                break
+
+            if len(result["list"]) == 0:
+                break
+
+            item_list = []
+            for item in result["list"]:
+                item_info = {
+                    "complex_id": complex_id,
+                    "complex_name": item.get("atclNm", ""),
+                    "item_id": item.get("atclNo", ""),
+                    "title": item.get("atclNm", ""),
+                    "building": item.get("bildNm", ""),
+                    "type": item.get("tradTpNm", ""),
+                    "price": item.get("prcInfo"),
+                    "size": f"{item.get('spc1')} / {item.get('spc2')}",
+                    "floor": item.get("flrInfo", ""),
+                    "direction": item.get("direction", ""),
+                    "describe": item.get("atclFetrDesc", ""),
+                }
+                item_list.append(item_info)
+                print(item_info)
+            logging.info(
+                f"[NaverAPTScraper.get_available_apt] item_list_len: {len(item_list)}"
             )
+            return item_list
 
-        items = soup.find_all("div", {"class": "item_inner"})
-
-        item_list = []
-        for item in items:
-            item_info = self._extract_item_info(item, complex_id)
-            item_list.append(item_info)
-        logging.info(
-            f"[NaverAPTScraper.get_available_apt] item_list_len: {len(item_list)}"
-        )
-        return item_list
+            if result["moreDataYn"] == "N":
+                break
+        return
