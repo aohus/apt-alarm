@@ -54,6 +54,6 @@ jobs:
         username: ${{ secrets.AWS_EC2_USERNAME }}
         key: ${{ secrets.AWS_EC2_SSH_KEY }}
         script: |
-          docker pull aohus/apt-alarm
+          docker pull aohus/apt-alarm:v0.1
           docker-compose down
           docker-compose up -d

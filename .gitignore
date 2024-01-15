@@ -7,3 +7,4 @@ docker-compose-dev.yaml
 test.py
 .env
 locustfile.py
+aws_pem_2024.pem
