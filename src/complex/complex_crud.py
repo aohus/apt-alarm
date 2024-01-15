@@ -1,16 +1,19 @@
-from fastapi import FastAPI, Request
-from utils.apt_scraper import NaverAPTScraper
-from configs.config import BASE_DIR
-
-from database import mongodb
-import re
 import logging
+import re
 from datetime import datetime
+
+from configs.config import BASE_DIR
+from database import mongodb
+from fastapi import FastAPI
+from fastapi import Request
 
 from .complex_model import ComplexModel
 
 
 class ComplexController:
+    def __init__(self, naver_apt_scraper):
+        self.naver_apt_scraper = naver_apt_scraper  # 수집기 인스턴스
+
     async def _create_complex(self, complex_list):
         complex_model_list = []
         for complex in complex_list:
@@ -29,18 +32,18 @@ class ComplexController:
             context = {"request": request}
             return "no input keyword"
 
-        def regex(item, keyword):
-            value = item.get(keyword)
-            if value:
-                if value[-1] == ";":
-                    return int(re.sub(r"\D", "", value) + "00000000") / 100000000
-                else:
-                    return int(re.sub(r"\D", "", value) + "0000") / 100000000
-            else:
-                return None
+        # def regex(item, keyword):
+        #     value = item.get(keyword)
+        #     if value:
+        #         if value[-1] == ";":
+        #             return int(re.sub(r"\D", "", value) + "00000000") / 100000000
+        #         else:
+        #             return int(re.sub(r"\D", "", value) + "0000") / 100000000
+        #     else:
+        #         return None
 
-        naver_apt_scraper = NaverAPTScraper()  # 수집기 인스턴스
-        complex_list = naver_apt_scraper.get_complex_info(keyword)  # 데이터 수집
+        # naver_apt_scraper = NaverAPTScraper()  # 수집기 인스턴스
+        complex_list = self.naver_apt_scraper.get_complex_info(keyword)  # 데이터 수집
         logging.info(
             f"[{datetime.now}] '{keyword}' length of complex list :{len(complex_list)}"
         )
@@ -49,12 +52,12 @@ class ComplexController:
         for complex in complex_list:
             regular_complex_list.append(
                 {
-                    "complex_id": int(complex["hscpNo"]),
-                    "complex_name": complex["hscpNm"],
-                    "lease_count": int(complex["leaseCnt"]),
-                    "min_lease_price": regex(complex, "leasePrcMin"),
-                    "max_lease_price": regex(complex, "leasePrcMax"),
-                    # "total_dong_count": complex["totDongCnt"],
+                    "complex_id": int(complex.get("markerId", 0)),
+                    "complex_name": complex.get("complexName", ""),
+                    "lease_count": int(complex.get("leaseCount", 0)),
+                    "min_lease_price": int(complex.get("minLeasePrice", 0)),
+                    "max_lease_price": int(complex.get("maxLeasePrice", 0)),
+                    # "total_dong_count": complex["totalDongCount"],
                     # "total_apt_count": int(complex["totHsehCnt"]),
                     # "approved_date": complex["useAprvYmd"],
                     # "deal_count": int(complex["dealCnt"]),

@@ -4,3 +4,6 @@
 driver/
 logfile
 docker-compose-dev.yaml
+test.py
+.env
+locustfile.py

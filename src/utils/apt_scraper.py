@@ -1,219 +1,137 @@
-from fastapi import HTTPException
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from webdriver_manager.chrome import ChromeDriverManager
-from bs4 import BeautifulSoup
-from selenium.webdriver.common.by import By
-import requests
-
-import datetime
-import re, math, json
+import json
 import logging
-from typing import List, Dict, Optional
+from typing import Dict
+from typing import List
 
-from . import slackbot, report
+import requests
+from bs4 import BeautifulSoup
+
+
+class URLBuilder:
+    @classmethod
+    def make_url(cls, path):
+        HOST_URL = "https://new.land.naver.com"
+        return HOST_URL + path
+
+    @classmethod
+    def make_complex_path(cls, cortarNo, leftLon, rightLon, topLat, bottomLat):
+        path = (
+            "/api/complexes/single-markers/2.0"
+            f"?cortarNo={cortarNo}&zoom=16&priceType=RETAIL&markerId"
+            "&markerType&selectedComplexNo&selectedComplexBuildingNo"
+            "&fakeComplexMarker&realEstateType=APT%3AABYG%3AJGC%3APRE"
+            "&tradeType=B1&tag=%3A%3A%3A%3A%3A%3A%3A%3A&rentPriceMin=0"
+            "&rentPriceMax=900000000&priceMin=0&priceMax=900000000&areaMin=0&areaMax=900000000"
+            "&oldBuildYears&recentlyBuildYears&minHouseHoldCount&maxHouseHoldCount"
+            "&showArticle=false&sameAddressGroup=true&minMaintenanceCost&maxMaintenanceCost&directions="
+            f"&leftLon={leftLon}&rightLon={rightLon}&topLat={topLat}&bottomLat={bottomLat}"
+            "&isPresale=true"
+        )
+        return URLBuilder.make_url(path)
 
 
 class NaverAPTScraper:
     def __init__(self):
-        self.driver = self._set_chrome_driver()
-
-    def _set_chrome_driver(self):
-        chrome_options = webdriver.ChromeOptions()
-        chrome_options.add_argument("headless")
-        chrome_options.add_argument("--no-sandbox")
-        driver = webdriver.Chrome(options=chrome_options)
-        # driver = webdriver.Chrome(
-        #     service=Service(ChromeDriverManager().install()), options=chrome_options
-        # )
-        logging.info(
-            f"[NaverAPTScraper._set_chrome_driver] setting chrome driver success"
-        )
-        return driver
-
-    def _make_url(self, search_target: str, **kwargs):
-        var = kwargs
-        if search_target == "dong":
-            return f"https://m.land.naver.com/search/result/{var.get('keyword')}"
-        elif search_target == "cluster_group":
-            cortarNo = var.get("cortarNo")
-            z = var.get("z")
-            lat = var.get("lat")
-            lon = var.get("lon")
-
-            lat_margin = 0.118
-            lon_margin = 0.111
-            btm = float(lat) - lat_margin
-            lft = float(lon) - lon_margin
-            top = float(lat) + lat_margin
-            rgt = float(lon) + lon_margin
-
-            rletTpCd = "APT"  # 매물 타입 아파트
-            tradTpCd = "A1:B1"  # 매매:전세 / 월세=B2
-            return (
-                "https://m.land.naver.com/cluster/clusterList?view=atcl"
-                f"&cortarNo={cortarNo}"
-                f"&rletTpCd={rletTpCd}"
-                f"&tradTpCd={tradTpCd}"
-                f"&z={z}"
-                f"&lat={lat}"
-                f"&lon={lon}"
-                f"&btm={btm}"
-                f"&lft={lft}"
-                f"&top={top}"
-                f"&rgt={rgt}"
-                f"&addon=COMPLEX&isOnlyIsale=false"
-            )
-        elif search_target == "cluster":
-            cortarNo = var.get("cortarNo")
-            z = var.get("z")
-            lgeo = var.get("lgeo")
-            lat2 = var.get("lat")
-            lon2 = var.get("lon")
-
-            lat_margin = 0.118
-            lon_margin = 0.111
-            btm = float(lat2) - lat_margin
-            lft = float(lon2) - lon_margin
-            top = float(lat2) + lat_margin
-            rgt = float(lon2) + lon_margin
-
-            rletTpCd = "APT"
-            tradTpCd = "A1:B1"
-
-            return (
-                "https://m.land.naver.com/cluster/ajax/complexList"
-                f"?itemId={lgeo}"
-                f"&mapKey="
-                f"&lgeo={lgeo}"
-                f"&rletTpCd={rletTpCd}"
-                f"&tradTpCd={tradTpCd}"
-                f"&z={z}"
-                f"&lat={lat2}"
-                f"&lon={lon2}"
-                f"&btm={btm}"
-                f"&lft={lft}"
-                f"&top={top}"
-                f"&rgt={rgt}"
-                f"&cortarNo={cortarNo}"
-                f"&isOnlyIsale=false&poiType=CC"
-                f"&preSaleComplexNumber={lgeo}"
-            )
-
-    def _get_html_element(
-        self, search_target: str, method: By, matching_element: str, **kwargs
-    ) -> str:
-        url = self._make_url(search_target, **kwargs)
-        try:
-            self.driver.get(url)
-            html = self.driver.find_element(method, matching_element).get_attribute(
-                "innerHTML"
-            )
-            return html
-        except Exception as e:
-            report.report_error(
-                f"주어진 페이지에서 원하는 정보를 찾지 못했습니다. \n search_target: {search_target}, url: {url}",
-                str(e),
-            )
-            raise HTTPException(
-                status_code=400,
-                detail=f"주어진 페이지에서 원하는 정보를 찾지 못했습니다. 'ㅇㅇ구 ㅇㅇ동' 형식으로 정확히 지역 이름을 입력해주세요.",
-            )
-
-    def _get_location_info(self, keyword: str) -> Dict:
-        info = self._get_html_element(
-            "dong", By.XPATH, "//*[@id='mapSearch']/script", keyword=keyword
-        )
-
-        # filter, lat, lon 값을 추출하는 정규식 패턴
-        pattern = r"filter:\s*({[^}]+})"
-        matches = re.search(pattern, info)
-
-        filter_value = matches.group(1)
-        locations = {}
-        pairs = re.findall(r"(\w+)\s*:\s*'([^']*)'", filter_value)
-        for key, value in pairs:
-            locations[key] = value
-        return locations
+        self.headers = {
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36",
+            "Referer": "https://new.land.naver.com/",
+        }
 
     def get_complex_info(self, keyword: str) -> List[Dict]:
-        locations = self._get_location_info(keyword)
-        info = self._get_html_element(
-            "cluster_group", By.XPATH, "/html/body/pre", **locations
-        )
-        complex_group_list = json.loads(info).get("data").get("COMPLEX")
+        param = {"keyword": keyword}
+        url = URLBuilder.make_url("/api/search")
+        try:
+            res = requests.get(url, params=param, headers=self.headers)
+            data = json.loads(res.text)
+        except Exception as e:
+            raise e
 
-        # 큰 원으로 구성되어 있는 전체 매물 그룹(complex_list)을 load 하여 한 그룹씩 세부 쿼리 진행
-        item_list = []
-        for complex in complex_group_list:
-            complex["cortarNo"] = locations["cortarNo"]
-            complex["z"] = locations["z"]
-            info = self._get_html_element(
-                "cluster", By.XPATH, "/html/body/pre", **complex
-            )
-            item_list.extend([d for d in json.loads(info).get("result")])
+        item_list = self.parse(data, keyword)
         logging.info(
             f"[NaverAPTScraper.get_complex_info] item_list_len:{len(item_list)}"
         )
         return item_list
 
-    @staticmethod
-    async def get_available_apt(complex_id, trade_type="B1"):
-        URL = "https://m.land.naver.com/complex/getComplexArticleList"
-        param = {
-            "hscpNo": f"{complex_id}",
-            "tradTpCd": f"{trade_type}",
-            "order": "point_",
-            "showR0": "N",
-        }
-
-        header = {
-            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36",
-            "Referer": "https://m.land.naver.com/",
-        }
-
-        page = 0
-        while True:
-            page += 1
-            param["page"] = page
-
-            resp = requests.get(URL, params=param, headers=header)
-            if resp.status_code != 200:
-                report.report_error(f"invalid status: {resp.status_code}")
-                break
-
-            data = json.loads(resp.text)
-            result = data["result"]
-
-            if result is None:
-                logging.error("no result")
-                break
-
-            if len(result["list"]) == 0:
-                logging.info(f"no available apt for {complex_id}")
-                break
-
-            item_list = []
-            for item in result["list"]:
-                item_info = {
-                    "complex_id": complex_id,
-                    "complex_name": item.get("atclNm", ""),
-                    "item_id": item.get("atclNo", ""),
-                    "title": item.get("atclNm", ""),
-                    "building": item.get("bildNm", ""),
-                    "type": item.get("tradTpNm", ""),
-                    "price": item.get("prcInfo"),
-                    "size": f"{item.get('spc1')} / {item.get('spc2')}",
-                    "floor": item.get("flrInfo", ""),
-                    "direction": item.get("direction", ""),
-                    "describe": item.get("atclFetrDesc", ""),
+    def parse(self, data, keyword):
+        # tmp
+        if "regions" in data:
+            return [
+                {
+                    "markerId": "103072",
+                    "markerType": "COMPLEX",
+                    "latitude": 37.304899,
+                    "longitude": 127.048914,
+                    "complexName": "광교한양수자인",
+                    "realEstateTypeCode": "APT",
+                    "realEstateTypeName": "아파트",
+                    "completionYearMonth": "201107",
+                    "totalDongCount": 4,
+                    "totalHouseholdCount": 214,
+                    "floorAreaRatio": 119,
+                    "minDealUnitPrice": 2755,
+                    "maxDealUnitPrice": 3673,
+                    "minLeaseUnitPrice": 1837,
+                    "maxLeaseUnitPrice": 1971,
+                    "minLeaseRate": 50,
+                    "maxLeaseRate": 69,
+                    "minArea": "108.22",
+                    "maxArea": "109.26",
+                    "minDealPrice": 0,
+                    "maxDealPrice": 0,
+                    "minLeasePrice": 60000,
+                    "maxLeasePrice": 65000,
+                    "minRentPrice": 0,
+                    "maxRentPrice": 0,
+                    "minShortTermRentPrice": 0,
+                    "maxShortTermRentPrice": 0,
+                    "isLeaseShown": True,
+                    "priceCount": 1,
+                    "representativeArea": 109.0,
+                    "medianDealUnitPrice": 2881,
+                    "medianLeaseUnitPrice": 1971,
+                    "medianLeaseRate": 68,
+                    "medianLeasePrice": 65000,
+                    "isPresales": False,
+                    "representativePhoto": "/20170822_184/apt_realimage_15033877064238G6hS_JPEG/79657266a48ed1dfa2283c97c1c9d0a0.jpg",
+                    "photoCount": 0,
+                    "dealCount": 0,
+                    "leaseCount": 2,
+                    "rentCount": 0,
+                    "shortTermRentCount": 0,
+                    "totalArticleCount": 2,
+                    "existPriceTab": True,
                 }
-                item_list.append(item_info)
-            logging.info(
-                f"[NaverAPTScraper.get_available_apt] item_list_len: {len(item_list)}"
-            )
+            ]
+
+        if "deepLink" in data:
+            item_list = self.final(keyword)
             return item_list
 
-            if result["moreDataYn"] == "N":
-                break
-        return
+    def get_boundary(self, lat, lon):
+        lat_margin = 0.0066
+        lon_margin = 0.013
+        return (
+            float(lon) - lon_margin,
+            float(lon) + lon_margin,
+            float(lat) + lat_margin,
+            float(lat) - lat_margin,
+        )
+
+    def final(self, keyword):
+        url = "https://m.land.naver.com/search/result/{}".format(keyword)
+        res = requests.get(url, headers=self.headers)
+        soup = (str)(BeautifulSoup(res.text, "lxml"))
+        value = (
+            soup.split("filter: {")[1].split("}")[0].replace(" ", "").replace("'", "")
+        )
+
+        lat = value.split("lat:")[1].split(",")[0]
+        lon = value.split("lon:")[1].split(",")[0]
+        cortarNo = value.split("cortarNo:")[1].split(",")[0]
+
+        leftLon, rightLon, topLat, bottomLat = self.get_boundary(lat, lon)
+        cortar_url = URLBuilder.make_complex_path(
+            cortarNo, leftLon, rightLon, topLat, bottomLat
+        )
+        res = requests.get(cortar_url, headers=self.headers)
+        return json.loads(res.text)

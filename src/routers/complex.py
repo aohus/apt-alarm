@@ -1,16 +1,16 @@
-from fastapi import FastAPI, APIRouter, Request
-from configs.config import BASE_DIR
-from complex.complex_crud import ComplexController
-
 # TODO: 분리 후 삭제
-import logging
-from fastapi.templating import Jinja2Templates
 from configs.config import BASE_DIR
+from fastapi import APIRouter
+from fastapi import Request
+from fastapi.templating import Jinja2Templates
+from utils.apt_scraper import NaverAPTScraper
+
+from complex.complex_crud import ComplexController
 
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
 router = APIRouter(prefix="/complex", tags=["complex"])
-complex_controller = ComplexController()
+complex_controller = ComplexController(NaverAPTScraper())
 
 
 # TODO: 분리
