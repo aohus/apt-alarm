@@ -1,10 +1,7 @@
 import logging
-import re
 from datetime import datetime
 
-from configs.config import BASE_DIR
 from database import mongodb
-from fastapi import FastAPI
 from fastapi import Request
 
 from .complex_model import ComplexModel

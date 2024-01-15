@@ -1,13 +1,11 @@
-import os
-import socket
 import datetime
+import os
+from dataclasses import dataclass
+from typing import Dict
+from typing import List
+
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
-from dataclasses import dataclass
-
-# from configs.config import SLACK_TOKEN, SLACK_CHANNEL
-from tabulate import tabulate
-from typing import List, Dict
 
 
 @dataclass
@@ -27,11 +25,6 @@ hex = {
 token = os.getenv("SLACK_TOKEN")
 client = WebClient(token=token)
 channel = os.getenv("SLACK_CHANNEL")
-# host = socket.gethostname()
-
-# token = SLACK_TOKEN
-# client = WebClient(token=token)
-# channel = SLACK_CHANNEL
 
 
 def post_apt_message(complex_name: str, available_apt_list: List[Dict]):
