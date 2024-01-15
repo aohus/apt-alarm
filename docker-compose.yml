@@ -24,9 +24,7 @@ services:
     restart: always
 
   fastapi:
-    build:
-      context: .
-      dockerfile: docker/Dockerfile
+    image: aohus/apt-alarm:v0.1
     container_name: apt-alarm
     ports:
       - 8000:8000
