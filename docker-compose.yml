@@ -18,9 +18,8 @@ services:
     volumes:
       - mongodb_data:/data/db
     environment:
-      - MONGO_DB_NAME=${MONGO_DB_NAME}
-      - MONGO_DB_ROOT_USERNAME=${MONGO_DB_ROOT_USERNAME}
-      - MONGO_DB_ROOT_PASSWORD=${MONGO_DB_ROOT_PASSWORD}
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_DB_ROOT_USERNAME}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_DB_ROOT_PASSWORD}
     restart: always
 
   fastapi:
@@ -31,7 +30,7 @@ services:
     depends_on:
       - mongodb
     environment:
-      - MONGO_DB_NAME=apt-alarm
+      - MONGO_DB_NAME=${MONGO_DB_NAME}
       - MONGO_DB_URL=${MONGO_DB_URL}
       - SLACK_CHANNEL=${SLACK_CHANNEL}
       - SLACK_TOKEN=${SLACK_TOKEN}
