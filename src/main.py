@@ -1,4 +1,8 @@
-from fastapi import Depends, FastAPI, Request
+import logging
+
+from fastapi import Depends
+from fastapi import FastAPI
+from fastapi import Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 
@@ -8,8 +12,9 @@ from database import mongodb
 # from .dependencies import get_query_token, get_token_header
 from interest.interest_model import InterestModel
 from internal import admin
-from routers import complex, interest, push
-import logging
+from routers import complex
+from routers import interest
+from routers import push
 
 logging.basicConfig(
     format="[%(asctime)s] [%(levelname)s] %(message)s",
@@ -55,7 +60,7 @@ async def on_app_start():
     """
     before app starts
     """
-    mongodb.connect()
+    await mongodb.connect()
 
 
 @app.on_event("shutdown")
@@ -63,4 +68,4 @@ async def on_app_shutdown():
     """
     after app shutdown
     """
-    mongodb.close()
+    await mongodb.close()
