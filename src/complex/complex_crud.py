@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime
+import time
 
 from database import mongodb
 from fastapi import Request
@@ -26,24 +26,9 @@ class ComplexController:
     async def search_complex(self, request: Request):
         keyword = request.query_params.get("q")  # 쿼리에서 키워드 추출
         if not keyword:  # 키워드가 없다면 사용자에게 검색을 요구
-            context = {"request": request}
             return "no input keyword"
 
-        # def regex(item, keyword):
-        #     value = item.get(keyword)
-        #     if value:
-        #         if value[-1] == ";":
-        #             return int(re.sub(r"\D", "", value) + "00000000") / 100000000
-        #         else:
-        #             return int(re.sub(r"\D", "", value) + "0000") / 100000000
-        #     else:
-        #         return None
-
-        # naver_apt_scraper = NaverAPTScraper()  # 수집기 인스턴스
-        complex_list = self.naver_apt_scraper.get_complex_info(keyword)  # 데이터 수집
-        logging.info(
-            f"[{datetime.now}] '{keyword}' length of complex list :{len(complex_list)}"
-        )
+        complex_list = await self.naver_apt_scraper.get_complex_info(keyword)  # 데이터 수집
         # complex_models = []
         regular_complex_list = []
         for complex in complex_list:

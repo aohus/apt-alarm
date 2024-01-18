@@ -13,7 +13,7 @@ class MongoDB:
         self.MONGO_DB_NAME = os.getenv("MONGO_DB_NAME")
 
     def connect(self):
-        self.client = AsyncIOMotorClient(self.MONGO_URL)
+        self.client = AsyncIOMotorClient(self.MONGO_URL)  # maxPoolSize=10
         self.engine = AIOEngine(client=self.client, database=self.MONGO_DB_NAME)
         logging.info("DB와 성공적으로 연결이 되었습니다.")
 
