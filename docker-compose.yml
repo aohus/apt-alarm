@@ -10,25 +10,11 @@ services:
     depends_on:
       - fastapi
 
-  # mongodb:
-  #   image: mongo
-  #   container_name: mongodb
-  #   ports:
-  #     - 27017:27017
-  #   volumes:
-  #     - mongodb_data:/data/db
-  #   environment:
-  #     - MONGO_INITDB_ROOT_USERNAME=${MONGO_DB_ROOT_USERNAME}
-  #     - MONGO_INITDB_ROOT_PASSWORD=${MONGO_DB_ROOT_PASSWORD}
-  #   restart: always
-
   fastapi:
     image: aohus/apt-alarm:v0.1
     container_name: apt-alarm
     ports:
       - 8000:8000
-    # depends_on:
-    #   - mongodb
     environment:
       - MONGO_DB_NAME=${MONGO_DB_NAME}
       - MONGO_DB_URL=${MONGO_DB_URL}
@@ -37,6 +23,3 @@ services:
       - SLACK_CHANNEL=${SLACK_CHANNEL}
       - SLACK_TOKEN=${SLACK_TOKEN}
     restart: always
-
-# volumes:
-#   mongodb_data:
