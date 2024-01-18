@@ -1,10 +1,8 @@
 **/config.json
 **/.DS_Store
 **/__pycache__/
-driver/
 logfile
-docker-compose-dev.yaml
 test.py
 .env
-locustfile.py
 aws_pem_2024.pem
+docker-compose-dev.yml
