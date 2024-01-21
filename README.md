@@ -5,26 +5,25 @@
 이를 위해 네이버 부동산의 웹 페이지를 스크래핑하여 데이터를 수집합니다.  
 정보를 받아보기 위해서는 slack 계정과 채널이 필요합니다.
 
-## Skill-set
+> [apt-alarm 경험하기](http://ec2.com)
 
+## Skill-Set
+- AWS EC2
 - Python
 - FastAPI
-- REST framework
-- selenium
-- mongodb
-- docker
+- MongoDB
+- Docker
 - Jinja Template
 
-## Run
+## Local Run
 
-1. docker 실행
-   - docker-compose.yaml 에 YOUR_CHANNEL, YOUR_TOKEN을 자신의 정보로 입력
-   - docker build & run
+1. docker-compose 실행
+   - `.env` 파일 생성하여 필요한 환경변수 입력(ex. `.env.example`)하고 적용
+   - run
+   ```bash
+   docker-compose -f docker-compose-dev.yml up --build
    ```
-   $ docker-compose up --build
-   ```
-2. webrowser(home: http://localhost:8000/) 로 접속
-
+2. web browser(home: http://0.0.0.0:8000/) 로 접속
    - 정확한 '동'명 검색  
       ex.
      - 서초구 양재동
@@ -33,7 +32,6 @@
    - mypage에서 알림 취소 / 조건 설정(#TODO)
 
 3. crontab 설정
-
    - 매일 설정한 시간에 알림 원하는 단지의 정보 제공
    - 새로운 매물 정보는 1시간에 1번 알림
    - [크론탭 설정 방법](documents/crontab.md) 참고

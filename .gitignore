@@ -5,4 +5,3 @@ logfile
 test.py
 .env
 aws_pem_2024.pem
-docker-compose-dev.yml
